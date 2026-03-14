@@ -28,6 +28,8 @@ interface DiagramActions {
   setAIConfig: (config: Partial<AIConfig>) => void
   setGenerating: (value: boolean) => void
   setError: (msg: string | null) => void
+  setAiSettingsOpen: (open: boolean) => void
+  setTheme: (theme: 'light' | 'dark') => void
 }
 
 interface DiagramState {
@@ -36,6 +38,8 @@ interface DiagramState {
   aiConfig: AIConfig
   isGenerating: boolean
   error: string | null
+  isAiSettingsOpen: boolean
+  theme: 'light' | 'dark'
 }
 
 type DiagramStore = DiagramState & DiagramActions
@@ -55,6 +59,8 @@ export const useDiagramStore = create<DiagramStore>()(
       aiConfig: DEFAULT_AI_CONFIG,
       isGenerating: false,
       error: null,
+      isAiSettingsOpen: false,
+      theme: 'light',
 
       // ── Schema ────────────────────────────────────────────────────────────────
       setSchema: (schema) =>
@@ -163,6 +169,10 @@ export const useDiagramStore = create<DiagramStore>()(
       setGenerating: (value) => set({ isGenerating: value }),
 
       setError: (msg) => set({ error: msg }),
+
+      setAiSettingsOpen: (open) => set({ isAiSettingsOpen: open }),
+
+      setTheme: (theme) => set({ theme }),
     }),
     {
       name: 'hf-modelo-storage',
@@ -170,6 +180,7 @@ export const useDiagramStore = create<DiagramStore>()(
         tables: state.tables,
         relationships: state.relationships,
         aiConfig: state.aiConfig,
+        theme: state.theme,
       }),
     }
   )

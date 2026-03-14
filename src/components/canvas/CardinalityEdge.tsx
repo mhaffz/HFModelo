@@ -31,10 +31,10 @@ export function CardinalityEdge({
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
               fontSize: 10,
-              fontWeight: 600,
+              fontWeight: 700,
               pointerEvents: 'all',
             }}
-            className="bg-slate-800/90 border border-slate-700 text-slate-400 px-1.5 py-0.5 rounded shadow-sm"
+            className="bg-white border border-primary-200 text-primary-700 px-2 py-0.5 rounded shadow-sm tracking-wide"
           >
             {data.label}
           </div>
@@ -46,10 +46,10 @@ export function CardinalityEdge({
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${sourceX + (sourcePosition === 'right' ? 25 : -25)}px, ${sourceY - 15}px)`,
             fontSize: 11,
-            fontWeight: 700,
+            fontWeight: 800,
             pointerEvents: 'none',
           }}
-          className="text-violet-400 font-mono"
+          className="text-primary-600 font-mono tracking-tight bg-white/80 px-1 rounded-sm backdrop-blur-sm"
         >
           {data?.sourceCardinality}
         </div>
@@ -60,10 +60,10 @@ export function CardinalityEdge({
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${targetX + (targetPosition === 'left' ? -25 : 25)}px, ${targetY - 15}px)`,
             fontSize: 11,
-            fontWeight: 700,
+            fontWeight: 800,
             pointerEvents: 'none',
           }}
-          className="text-indigo-400 font-mono"
+          className="text-primary-800 font-mono tracking-tight bg-white/80 px-1 rounded-sm backdrop-blur-sm"
         >
           {data?.targetCardinality}
         </div>

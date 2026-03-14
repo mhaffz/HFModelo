@@ -1,0 +1,201 @@
+import { useState, useRef, useEffect } from 'react'
+import {
+  Sparkles,
+  Loader2,
+  Send,
+  X,
+  Bot,
+  AlertCircle
+} from 'lucide-react'
+import { useDiagramStore } from '../../store/useDiagramStore'
+import { generateDiagramFromPrompt } from '../../services/aiService'
+
+interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant' | 'error'
+  content: string
+}
+
+export function AiChatWidget() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: '1',
+      role: 'assistant',
+      content: 'Olá! Sou seu assistente de banco de dados. Como posso ajudar você a modelar hoje?',
+    },
+  ])
+  const [input, setInput] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const { aiConfig, setSchema, setError } = useDiagramStore()
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  const handleSend = async () => {
+    if (!input.trim() || isGenerating) return
+
+    const prompt = input.trim()
+    setInput('')
+    
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now().toString(), role: 'user', content: prompt }
+    ])
+
+    setIsGenerating(true)
+    setError(null)
+
+    try {
+      const schema = await generateDiagramFromPrompt(prompt, aiConfig)
+      setSchema(schema)
+      
+      setMessages((prev) => [
+        ...prev,
+        { 
+          id: Date.now().toString(), 
+          role: 'assistant', 
+          content: 'Diagrama gerado com sucesso! 🎉 Você pode visualizá-lo e editá-lo no canvas.'
+        }
+      ])
+    } catch (e) {
+      console.error('Erro ao gerar diagrama com IA:', e)
+      setMessages((prev) => [
+        ...prev,
+        { 
+          id: Date.now().toString(), 
+          role: 'error', 
+          content: 'Ocorreu um erro ao gerar o diagrama. Verifique o console para mais detalhes.'
+        }
+      ])
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  return (
+    <div className="absolute bottom-6 right-6 z-[100] flex flex-col items-end pointer-events-none">
+      {/* Chat Window */}
+      {isOpen && (
+        <div className="w-[360px] max-h-[500px] bg-white dark:bg-dark-surface border border-primary-100 dark:border-dark-border rounded-[28px] shadow-[0_20px_60px_rgba(147,112,64,0.15)] flex flex-col overflow-hidden animate-fade-in transform origin-bottom-right pointer-events-auto">
+
+          {/* Header */}
+          <div className="bg-primary-900 px-5 py-4 flex items-center justify-between text-white shadow-md relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                <Sparkles size={16} className="text-primary-100" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold tracking-tight">Assistente IA</h3>
+                <p className="text-[10px] text-primary-200 uppercase tracking-widest font-semibold">HFModelo Engine</p>
+              </div>
+            </div>
+            <button 
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsOpen(false)
+              }}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors active:scale-95 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-primary-100 dark:scrollbar-thumb-dark-border bg-pastel-bg/30 dark:bg-dark-bg/30">
+
+            {messages.map((msg) => (
+              <div 
+                key={msg.id} 
+                className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {msg.role !== 'user' && (
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-1
+                    ${msg.role === 'error' ? 'bg-red-100 text-red-500' : 'bg-primary-100 text-primary-600'}
+                  `}>
+                    {msg.role === 'error' ? <AlertCircle size={12} /> : <Bot size={12} />}
+                  </div>
+                )}
+                
+                <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed shadow-sm
+                  ${msg.role === 'user' 
+                    ? 'bg-primary-900 dark:bg-primary-800 text-white rounded-tr-sm' 
+                    : msg.role === 'error'
+                      ? 'bg-white dark:bg-dark-panel border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 rounded-tl-sm'
+                      : 'bg-white dark:bg-dark-panel border border-primary-100 dark:border-dark-border text-primary-900 dark:text-dark-text rounded-tl-sm'
+                  }
+                `}>
+
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+            
+            {isGenerating && (
+              <div className="flex gap-2 justify-start items-center text-primary-400">
+                <div className="w-6 h-6 rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center shrink-0">
+                  <Bot size={12} className="text-primary-50" />
+                </div>
+                <div className="bg-white dark:bg-dark-panel border border-primary-100 dark:border-dark-border rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-primary-300 dark:bg-primary-700 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-1.5 h-1.5 bg-primary-400 dark:bg-primary-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-1.5 h-1.5 bg-primary-500 dark:bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input Area */}
+          <div className="p-3 bg-white dark:bg-dark-surface border-t border-primary-100 dark:border-dark-border">
+            <div className="relative flex items-end gap-2 bg-pastel-panel/50 dark:bg-dark-panel/50 rounded-2xl p-1.5 border border-primary-100/50 dark:border-dark-border focus-within:border-primary-300 dark:focus-within:border-primary-700 focus-within:bg-white dark:focus-within:bg-dark-panel transition-all shadow-inner">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSend()
+                  }
+                }}
+                placeholder="Descreva o banco de dados..."
+                className="w-full max-h-32 min-h-[44px] bg-transparent resize-none text-sm text-primary-900 dark:text-dark-text placeholder:text-primary-300 dark:placeholder:text-dark-muted px-3 py-2.5 focus:outline-none scrollbar-none"
+                rows={1}
+                disabled={isGenerating}
+              />
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || isGenerating}
+                className="w-10 h-10 shrink-0 bg-primary-900 dark:bg-primary-800 hover:bg-primary-800 dark:hover:bg-primary-700 text-white rounded-xl flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md active:scale-95 mb-0.5 mr-0.5"
+              >
+                {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+              </button>
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* FAB */}
+      {!isOpen && (
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="w-16 h-16 bg-primary-900 hover:bg-primary-800 text-white rounded-[24px] shadow-[0_12px_30px_rgba(100,72,53,0.3)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 group relative overflow-hidden pointer-events-auto cursor-pointer"
+        >
+          <Sparkles size={26} className="relative z-10 drop-shadow-md group-hover:rotate-12 transition-transform duration-300" />
+        </button>
+      )}
+    </div>
+  )
+}

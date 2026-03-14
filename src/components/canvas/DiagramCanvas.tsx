@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react'
 import ReactFlow, {
   Background,
   Controls,
-  MiniMap,
   addEdge,
   useNodesState,
   useEdgesState,
@@ -20,6 +19,8 @@ import { EditTableModal } from '../modals/EditTableModal'
 import type { Relationship } from '../../types/diagram'
 
 import { CardinalityEdge } from './CardinalityEdge'
+import { AiChatWidget } from '../chat/AiChatWidget'
+
 
 // ─── Node/Edge Types Registration ─────────────────────────────────────────────
 
@@ -30,8 +31,8 @@ const EDGE_TYPES = { cardinalityEdge: CardinalityEdge }
 
 function relationshipToEdgeStyle(rel: Relationship): Partial<Edge> {
   const baseStyle = {
-    stroke: '#818cf8',
-    strokeWidth: 2,
+    stroke: '#d4b896', // changed from indigo
+    strokeWidth: 2.5,
   }
 
   // If it's a many-to-many relationship (implied by 'n' in both ends)
@@ -39,23 +40,24 @@ function relationshipToEdgeStyle(rel: Relationship): Partial<Edge> {
 
   if (isNM) {
     return {
-      style: { ...baseStyle, stroke: '#c084fc' },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#c084fc' },
-      markerStart: { type: MarkerType.ArrowClosed, color: '#c084fc' },
+      style: { ...baseStyle, stroke: '#b68558' },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#b68558' },
+      markerStart: { type: MarkerType.ArrowClosed, color: '#b68558' },
     }
   }
 
   return {
     style: baseStyle,
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#818cf8' },
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#d4b896' },
   }
 }
 
 // ─── DiagramCanvas ────────────────────────────────────────────────────────────
 
 export function DiagramCanvas() {
-  const { tables, relationships, updateTablePosition, addRelationship, removeRelationship, updateRelationship } =
+  const { tables, relationships, updateTablePosition, addRelationship, removeRelationship, updateRelationship, theme } =
     useDiagramStore()
+
   const [editingTableId, setEditingTableId] = useState<string | null>(null)
 
   // Map Zustand → React Flow nodes
@@ -91,6 +93,19 @@ export function DiagramCanvas() {
   const [, , onNodesChange] = useNodesState(rfNodes)
   const [, setEdges, onEdgesChange] = useEdgesState(rfEdges)
 
+  const handleNodesChange = useCallback(
+    (changes: any[]) => {
+      onNodesChange(changes)
+
+      changes.forEach((change) => {
+        if (change.type === 'position' && change.position && change.dragging) {
+          updateTablePosition(change.id, change.position)
+        }
+      })
+    },
+    [onNodesChange, updateTablePosition]
+  )
+
   const onConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return
@@ -120,12 +135,12 @@ export function DiagramCanvas() {
 
       const action = prompt(
         `Relacionamento: ${rel.label || 'sem nome'}\n` +
-          `Cardinalidades: ${rel.sourceCardinality} - ${rel.targetCardinality}\n\n` +
-          `O que deseja fazer?\n` +
-          `1. Editar Nome\n` +
-          `2. Editar Cardinalidades\n` +
-          `3. Remover\n` +
-          `Digite o número da opção:`
+        `Cardinalidades: ${rel.sourceCardinality} - ${rel.targetCardinality}\n\n` +
+        `O que deseja fazer?\n` +
+        `1. Editar Nome\n` +
+        `2. Editar Cardinalidades\n` +
+        `3. Remover\n` +
+        `Digite o número da opção:`
       )
 
       if (action === '1') {
@@ -151,7 +166,7 @@ export function DiagramCanvas() {
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
-        onNodesChange={onNodesChange}
+        onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
@@ -165,38 +180,43 @@ export function DiagramCanvas() {
         minZoom={0.2}
         maxZoom={2}
         deleteKeyCode={null}
-        className="bg-slate-950"
+        className="bg-pastel-bg dark:bg-dark-bg transition-colors duration-300"
         proOptions={{ hideAttribution: true }}
       >
         <Background
           variant={BackgroundVariant.Dots}
-          gap={24}
+          gap={32}
           size={1}
-          color="#1e293b"
+          color={theme === 'dark' ? '#3d372e' : '#d4b896'}
+          className="opacity-30"
         />
         <Controls
-          className="!bg-slate-800 !border-slate-700 !shadow-xl"
+          className="!bg-white dark:!bg-dark-surface !border-primary-100 dark:!border-dark-border !border !shadow-2xl !shadow-primary-900/5 !rounded-2xl overflow-hidden 
+            [&_button]:!bg-white dark:[&_button]:!bg-dark-surface [&_button]:!border-primary-50 dark:[&_button]:!border-dark-border [&_button]:!border-b last:[&_button]:!border-b-0
+            [&_button]:!transition-colors [&_button:hover]:!bg-primary-50 dark:[&_button:hover]:!bg-dark-panel 
+            [&_button]:!text-primary-400 dark:[&_button]:!text-dark-muted 
+            [&_button:hover]:!text-primary-600 dark:[&_button:hover]:!text-primary-400
+            [&_svg]:!fill-primary-600 dark:[&_svg]:!fill-dark-text"
           showInteractive={false}
         />
-        <MiniMap
-          nodeColor="#4338ca"
-          maskColor="rgba(15, 23, 42, 0.7)"
-          className="!bg-slate-900 !border-slate-700 !rounded-xl !shadow-xl"
-        />
+
+
       </ReactFlow>
 
       {/* Empty state */}
       {tables.length === 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
-          <div className="text-center space-y-3 opacity-40">
-            <div className="text-7xl">🗄️</div>
-            <p className="text-slate-300 text-lg font-semibold">Canvas vazio</p>
-            <p className="text-slate-500 text-sm">
-              Descreva seu banco de dados no painel esquerdo
-              <br />
-              ou clique em "Adicionar Tabela"
-            </p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none px-6 text-center">
+          <div className="relative mb-6">
+            <div className="absolute inset-0 bg-primary-200 blur-3xl opacity-20 rounded-full animate-pulse"></div>
+            <div className="relative w-28 h-28 bg-white border border-primary-100 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-primary-900/10 rotate-3">
+              <span className="text-5xl">📐</span>
+            </div>
           </div>
+          <h2 className="text-primary-900 dark:text-dark-text text-2xl font-black tracking-tight mb-2">Workspace Pronto</h2>
+          <p className="text-primary-600/60 dark:text-dark-muted text-sm max-w-[280px] font-bold uppercase tracking-widest leading-loose">
+            Descreva seu modelo na lateral para começar a mágica da IA.
+          </p>
+
         </div>
       )}
 
@@ -207,6 +227,9 @@ export function DiagramCanvas() {
           onClose={() => setEditingTableId(null)}
         />
       )}
+
+      {/* Floating AI Chat Widget */}
+      <AiChatWidget />
     </div>
   )
 }
