@@ -3,7 +3,7 @@ import { ChevronDown, Check } from 'lucide-react'
 
 interface Option {
   value: string
-  label: string
+  label: React.ReactNode
 }
 
 interface CustomSelectProps {
@@ -12,6 +12,7 @@ interface CustomSelectProps {
   options: Option[]
   label?: string
 }
+
 
 export function CustomSelect({ value, onChange, options, label }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false)

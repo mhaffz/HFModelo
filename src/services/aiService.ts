@@ -84,7 +84,7 @@ function parseJSONFromAI(raw: string): DiagramSchema {
 
 // ─── Providers ───────────────────────────────────────────────────────────────
 
-async function callOpenAI(prompt: string, config: AIConfig): Promise<string> {
+async function callChatGPT(prompt: string, config: AIConfig): Promise<string> {
   const response = await fetch('/api-openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -226,8 +226,8 @@ export async function generateDiagramFromPrompt(
   let rawResponse: string
 
   switch (config.provider) {
-    case 'openai':
-      rawResponse = await callOpenAI(prompt, config)
+    case 'chatgpt':
+      rawResponse = await callChatGPT(prompt, config)
       break
     case 'gemini':
       rawResponse = await callGemini(prompt, config)

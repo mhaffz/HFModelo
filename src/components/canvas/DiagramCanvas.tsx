@@ -10,6 +10,7 @@ import ReactFlow, {
   type Node,
   BackgroundVariant,
   MarkerType,
+  useReactFlow,
 } from 'reactflow'
 import 'reactflow/dist/base.css'
 
@@ -55,7 +56,7 @@ function relationshipToEdgeStyle(rel: Relationship): Partial<Edge> {
 // ─── DiagramCanvas ────────────────────────────────────────────────────────────
 
 export function DiagramCanvas() {
-  const { tables, relationships, updateTablePosition, addRelationship, removeRelationship, updateRelationship, theme } =
+  const { tables, relationships, updateTablePosition, addRelationship, removeRelationship, updateRelationship, appendSchema, setError, theme } =
     useDiagramStore()
 
   const [editingTableId, setEditingTableId] = useState<string | null>(null)
@@ -161,8 +162,45 @@ export function DiagramCanvas() {
     [relationships, updateRelationship, removeRelationship]
   )
 
+  const { screenToFlowPosition } = useReactFlow()
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+  }, [])
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault()
+
+      const file = event.dataTransfer.files?.[0]
+      if (!file) return
+
+      if (file.name.endsWith('.hfmodelo') || file.name.endsWith('.json')) {
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+          try {
+            const schema = JSON.parse(ev.target?.result as string)
+            if (!schema.tables) throw new Error('Formato inválido')
+
+            const position = screenToFlowPosition({
+              x: event.clientX,
+              y: event.clientY,
+            })
+
+            appendSchema(schema, position)
+          } catch (e) {
+            setError('Arquivo .hfmodelo inválido ou corrompido.')
+          }
+        }
+        reader.readAsText(file)
+      }
+    },
+    [screenToFlowPosition, appendSchema, setError]
+  )
+
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full relative" onDragOver={onDragOver} onDrop={onDrop}>
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
@@ -172,6 +210,7 @@ export function DiagramCanvas() {
         onNodeDragStop={onNodeDragStop}
         onEdgeDoubleClick={onEdgeDoubleClick}
         nodeTypes={NODE_TYPES}
+
         edgeTypes={EDGE_TYPES}
         snapToGrid
         snapGrid={[24, 24]}

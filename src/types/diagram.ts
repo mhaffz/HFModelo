@@ -54,9 +54,19 @@ export interface DiagramSchema {
   relationships: Relationship[]
 }
 
+export interface Workspace {
+  id: string
+  name: string
+  tables: Table[]
+  relationships: Relationship[]
+  createdAt: number
+  updatedAt: number
+}
+
+
 // ─── AI Service Types ─────────────────────────────────────────────────────────
 
-export type AIProvider = 'openai' | 'gemini' | 'ollama' | 'openrouter'
+export type AIProvider = 'chatgpt' | 'gemini' | 'ollama' | 'openrouter'
 
 export interface AIConfig {
   provider: AIProvider
