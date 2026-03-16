@@ -26,14 +26,14 @@ export function PromptModal({
 
   const handleClose = () => {
     setIsClosing(true)
-    setTimeout(onCancel, 200)
+    setTimeout(onCancel, 300)
   }
 
   const handleConfirm = (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!value.trim()) return
     setIsClosing(true)
-    setTimeout(() => onConfirm(value), 200)
+    setTimeout(() => onConfirm(value), 300)
   }
 
   const [mounted, setMounted] = useState(false)
@@ -47,14 +47,14 @@ export function PromptModal({
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity duration-200 ${
+      className={`fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] transition-all duration-300 ease-in-out ${
         isClosing ? 'opacity-0' : 'opacity-100'
       }`}
       onClick={handleClose}
     >
       <div
-        className={`w-full max-w-sm bg-white dark:bg-dark-surface rounded-3xl shadow-2xl overflow-hidden border border-primary-100 dark:border-dark-border transition-all duration-200 ${
-          isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'
+        className={`w-full max-w-sm bg-white dark:bg-dark-surface rounded-3xl shadow-2xl overflow-hidden border border-primary-100 dark:border-dark-border transition-all duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
+          isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100 animate-scale-up'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
