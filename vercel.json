@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/api-openai/:path*",
+      "destination": "https://api.openai.com/:path*"
+    },
+    {
+      "source": "/api-gemini/:path*",
+      "destination": "https://generativelanguage.googleapis.com/:path*"
+    },
+    {
+      "source": "/api-openrouter/:path*",
+      "destination": "https://openrouter.ai/:path*"
+    }
+  ]
+}
