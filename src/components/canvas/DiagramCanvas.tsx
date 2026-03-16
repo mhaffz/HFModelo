@@ -21,6 +21,9 @@ import type { Relationship } from '../../types/diagram'
 
 import { CardinalityEdge } from './CardinalityEdge'
 import { AiChatWidget } from '../chat/AiChatWidget'
+import { ConfirmModal } from '../modals/ConfirmModal'
+import { PromptModal } from '../modals/PromptModal'
+import { ConnectionMode } from 'reactflow'
 
 
 // ─── Node/Edge Types Registration ─────────────────────────────────────────────
@@ -60,6 +63,11 @@ export function DiagramCanvas() {
     useDiagramStore()
 
   const [editingTableId, setEditingTableId] = useState<string | null>(null)
+  
+  // Modals state
+  const [showRelDeleteConfirm, setShowRelDeleteConfirm] = useState<string | null>(null)
+  const [showRelNamePrompt, setShowRelNamePrompt] = useState<Relationship | null>(null)
+  const [showRelCardPrompt, setShowRelCardPrompt] = useState<Relationship | null>(null)
 
   // Map Zustand → React Flow nodes
   const rfNodes = useMemo<Node<TableNodeData>[]>(() => {
@@ -145,21 +153,14 @@ export function DiagramCanvas() {
       )
 
       if (action === '1') {
-        const newLabel = prompt('Novo nome do relacionamento:', rel.label)
-        if (newLabel !== null) updateRelationship(rel.id, { label: newLabel })
+        setShowRelNamePrompt(rel)
       } else if (action === '2') {
-        const sCard = prompt('Cardinalidade Origem (ex: (0,n)):', rel.sourceCardinality)
-        const tCard = prompt('Cardinalidade Destino (ex: (1,1)):', rel.targetCardinality)
-        if (sCard !== null && tCard !== null) {
-          updateRelationship(rel.id, { sourceCardinality: sCard, targetCardinality: tCard })
-        }
+        setShowRelCardPrompt(rel)
       } else if (action === '3') {
-        if (confirm(`Remover relacionamento?`)) {
-          removeRelationship(edge.id)
-        }
+        setShowRelDeleteConfirm(rel.id)
       }
     },
-    [relationships, updateRelationship, removeRelationship]
+    [relationships]
   )
 
   const { screenToFlowPosition } = useReactFlow()
@@ -210,8 +211,8 @@ export function DiagramCanvas() {
         onNodeDragStop={onNodeDragStop}
         onEdgeDoubleClick={onEdgeDoubleClick}
         nodeTypes={NODE_TYPES}
-
         edgeTypes={EDGE_TYPES}
+        connectionMode={ConnectionMode.Loose}
         snapToGrid
         snapGrid={[24, 24]}
         fitView
@@ -269,6 +270,53 @@ export function DiagramCanvas() {
 
       {/* Floating AI Chat Widget */}
       <AiChatWidget />
+
+      {/* Relationship Modals */}
+      {showRelDeleteConfirm && (
+        <ConfirmModal
+          title="Remover Relacionamento"
+          message="Tem certeza que deseja remover este relacionamento?"
+          confirmLabel="Remover"
+          isDestructive
+          onConfirm={() => {
+            removeRelationship(showRelDeleteConfirm)
+            setShowRelDeleteConfirm(null)
+          }}
+          onCancel={() => setShowRelDeleteConfirm(null)}
+        />
+      )}
+
+      {showRelNamePrompt && (
+        <PromptModal
+          title="Editar Nome"
+          label="Nome do Relacionamento"
+          defaultValue={showRelNamePrompt.label}
+          onConfirm={(val) => {
+            updateRelationship(showRelNamePrompt.id, { label: val })
+            setShowRelNamePrompt(null)
+          }}
+          onCancel={() => setShowRelNamePrompt(null)}
+        />
+      )}
+
+      {showRelCardPrompt && (
+        <PromptModal
+          title="Editar Cardinalidades"
+          label="Formato: Origem-Destino (ex: (0,n)-(1,1))"
+          defaultValue={`${showRelCardPrompt.sourceCardinality}-${showRelCardPrompt.targetCardinality}`}
+          onConfirm={(val) => {
+            const [s, t] = val.split('-')
+            if (s && t) {
+              updateRelationship(showRelCardPrompt.id, { 
+                sourceCardinality: s.trim(), 
+                targetCardinality: t.trim() 
+              })
+            }
+            setShowRelCardPrompt(null)
+          }}
+          onCancel={() => setShowRelCardPrompt(null)}
+        />
+      )}
     </div>
   )
 }

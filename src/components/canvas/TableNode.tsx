@@ -3,6 +3,8 @@ import { Handle, Position, type NodeProps } from 'reactflow'
 import { Key, Link, Hash, Type, Calendar, ToggleLeft, FileJson, Pencil, Trash2, Plus } from 'lucide-react'
 import type { Table, Attribute } from '../../types/diagram'
 import { useDiagramStore } from '../../store/useDiagramStore'
+import { ConfirmModal } from '../modals/ConfirmModal'
+import { PromptModal } from '../modals/PromptModal'
 
 // ─── Type Icon Map ────────────────────────────────────────────────────────────
 
@@ -108,12 +110,12 @@ export type TableNodeData = Table & {
 
 function TableNodeComponent({ data, selected, dragging }: NodeProps<TableNodeData>) {
   const { removeTable, removeAttribute, addAttribute } = useDiagramStore()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showAddAttrPrompt, setShowAddAttrPrompt] = useState(false)
 
-  const handleAddAttr = () => {
-    const name = prompt('Nome do atributo:')
-    if (!name) return
-    const type = prompt('Tipo (VARCHAR, INT, BOOLEAN, etc):') || 'VARCHAR'
-    addAttribute(data.id, { name, type })
+  const handleAddAttr = (name: string) => {
+    addAttribute(data.id, { name, type: 'VARCHAR' })
+    setShowAddAttrPrompt(false)
   }
 
   return (
@@ -173,9 +175,7 @@ function TableNodeComponent({ data, selected, dragging }: NodeProps<TableNodeDat
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                if (confirm(`Remover tabela "${data.name}"?`)) {
-                  removeTable(data.id)
-                }
+                setShowDeleteConfirm(true)
               }}
               className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30 text-pastel-muted dark:text-dark-muted hover:text-red-500 dark:hover:text-red-400 transition-colors"
               title="Remover tabela"
@@ -194,7 +194,7 @@ function TableNodeComponent({ data, selected, dragging }: NodeProps<TableNodeDat
           <button
             onClick={(e) => {
               e.stopPropagation()
-              handleAddAttr()
+              setShowAddAttrPrompt(true)
             }}
             className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-white dark:bg-dark-panel border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 transition-colors"
           >
@@ -221,6 +221,30 @@ function TableNodeComponent({ data, selected, dragging }: NodeProps<TableNodeDat
         </div>
 
       </div>
+
+      {showDeleteConfirm && (
+        <ConfirmModal
+          title="Remover Tabela"
+          message={`Tem certeza que deseja remover a tabela "${data.name}"? Esta ação não pode ser desfeita.`}
+          confirmLabel="Remover"
+          isDestructive
+          onConfirm={() => {
+            removeTable(data.id)
+            setShowDeleteConfirm(false)
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
+
+      {showAddAttrPrompt && (
+        <PromptModal
+          title="Adicionar Atributo"
+          label="Nome do Atributo"
+          placeholder="ex: nome, id, data_criacao"
+          onConfirm={handleAddAttr}
+          onCancel={() => setShowAddAttrPrompt(false)}
+        />
+      )}
     </>
   )
 }

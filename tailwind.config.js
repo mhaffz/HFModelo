@@ -37,7 +37,15 @@ export default {
           text: '#e6dacb',
           muted: '#a39281'
         }
-      }
+      },
+      keyframes: {
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 2s infinite',
+      },
     },
   },
   plugins: [],

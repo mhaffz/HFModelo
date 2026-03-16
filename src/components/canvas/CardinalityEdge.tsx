@@ -1,4 +1,4 @@
-import { BaseEdge, EdgeLabelRenderer, EdgeProps, getSmoothStepPath } from 'reactflow'
+import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from 'reactflow'
 
 export function CardinalityEdge({
   sourceX,
@@ -11,7 +11,7 @@ export function CardinalityEdge({
   markerEnd,
   data,
 }: EdgeProps) {
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+  const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -19,6 +19,20 @@ export function CardinalityEdge({
     targetX,
     targetY,
   })
+
+  // Atingir o afastamento perfeito para as cardinalidades usando ângulos
+  // Quando múltiplas tabelas chegam no mesmo destino, elas têm ângulos de origem diferentes!
+  const angle = Math.atan2(sourceY - targetY, sourceX - targetX)
+  
+  const dist = 42 // Distância do ponto de ancoragem
+  
+  // Target cardinality: empurramos na direção da origem para que fique na linha
+  const tLabelX = targetX + Math.cos(angle) * dist
+  const tLabelY = targetY + Math.sin(angle) * dist - 12
+
+  // Source cardinality: empurramos na direção do destino para que saia do handle
+  const sLabelX = sourceX - Math.cos(angle) * dist
+  const sLabelY = sourceY - Math.sin(angle) * dist - 12
 
   return (
     <>
@@ -34,7 +48,7 @@ export function CardinalityEdge({
               fontWeight: 700,
               pointerEvents: 'all',
             }}
-            className="bg-white border border-primary-200 text-primary-700 px-2 py-0.5 rounded shadow-sm tracking-wide"
+            className="bg-white dark:bg-dark-panel border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-dark-text px-2 py-0.5 rounded shadow-sm tracking-wide z-10"
           >
             {data.label}
           </div>
@@ -44,12 +58,12 @@ export function CardinalityEdge({
         <div
           style={{
             position: 'absolute',
-            transform: `translate(-50%, -50%) translate(${sourceX + (sourcePosition === 'right' ? 25 : -25)}px, ${sourceY - 15}px)`,
-            fontSize: 11,
+            transform: `translate(-50%, -50%) translate(${sLabelX}px, ${sLabelY}px)`,
+            fontSize: 10,
             fontWeight: 800,
             pointerEvents: 'none',
           }}
-          className="text-primary-600 font-mono tracking-tight bg-white/80 px-1 rounded-sm backdrop-blur-sm"
+          className="text-primary-600 dark:text-primary-400 font-mono tracking-tight bg-white/90 dark:bg-dark-bg/90 px-1 rounded-sm backdrop-blur-sm z-20 border border-transparent dark:border-primary-900/30"
         >
           {data?.sourceCardinality}
         </div>
@@ -58,12 +72,12 @@ export function CardinalityEdge({
         <div
           style={{
             position: 'absolute',
-            transform: `translate(-50%, -50%) translate(${targetX + (targetPosition === 'left' ? -25 : 25)}px, ${targetY - 15}px)`,
-            fontSize: 11,
+            transform: `translate(-50%, -50%) translate(${tLabelX}px, ${tLabelY}px)`,
+            fontSize: 10,
             fontWeight: 800,
             pointerEvents: 'none',
           }}
-          className="text-primary-800 font-mono tracking-tight bg-white/80 px-1 rounded-sm backdrop-blur-sm"
+          className="text-primary-800 dark:text-primary-300 font-mono tracking-tight bg-white/90 dark:bg-dark-bg/90 px-1 rounded-sm backdrop-blur-sm z-20 border border-transparent dark:border-primary-900/30"
         >
           {data?.targetCardinality}
         </div>

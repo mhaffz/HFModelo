@@ -5,10 +5,12 @@ import {
   Send,
   X,
   Bot,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react'
 import { useDiagramStore } from '../../store/useDiagramStore'
 import { generateDiagramFromPrompt } from '../../services/aiService'
+import { ConfirmModal } from '../modals/ConfirmModal'
 
 interface ChatMessage {
   id: string
@@ -22,11 +24,12 @@ export function AiChatWidget() {
     {
       id: '1',
       role: 'assistant',
-      content: 'Olá! Sou seu assistente de banco de dados. Como posso ajudar você a modelar hoje?',
+      content: 'Olá, sou o HFZinho! Seu assistente de banco de dados. Como posso ajudar você a modelar hoje?',
     },
   ])
   const [input, setInput] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { aiConfig, setSchema, setError } = useDiagramStore()
@@ -44,7 +47,7 @@ export function AiChatWidget() {
 
     const prompt = input.trim()
     setInput('')
-    
+
     setMessages((prev) => [
       ...prev,
       { id: Date.now().toString(), role: 'user', content: prompt }
@@ -56,12 +59,12 @@ export function AiChatWidget() {
     try {
       const schema = await generateDiagramFromPrompt(prompt, aiConfig)
       setSchema(schema)
-      
+
       setMessages((prev) => [
         ...prev,
-        { 
-          id: Date.now().toString(), 
-          role: 'assistant', 
+        {
+          id: Date.now().toString(),
+          role: 'assistant',
           content: 'Diagrama gerado com sucesso! 🎉 Você pode visualizá-lo e editá-lo no canvas.'
         }
       ])
@@ -69,15 +72,26 @@ export function AiChatWidget() {
       console.error('Erro ao gerar diagrama com IA:', e)
       setMessages((prev) => [
         ...prev,
-        { 
-          id: Date.now().toString(), 
-          role: 'error', 
+        {
+          id: Date.now().toString(),
+          role: 'error',
           content: 'Ocorreu um erro ao gerar o diagrama. Verifique o console para mais detalhes.'
         }
       ])
     } finally {
       setIsGenerating(false)
     }
+  }
+
+  const handleClearChat = () => {
+    setMessages([
+      {
+        id: '1',
+        role: 'assistant',
+        content: 'Chat limpo! Como posso ajudar você a modelar agora?',
+      },
+    ])
+    setShowClearConfirm(false)
   }
 
   return (
@@ -93,11 +107,10 @@ export function AiChatWidget() {
                 <Sparkles size={16} className="text-primary-100" />
               </div>
               <div>
-                <h3 className="text-sm font-bold tracking-tight">Assistente IA</h3>
-                <p className="text-[10px] text-primary-200 uppercase tracking-widest font-semibold">HFModelo Engine</p>
+                <h3 className="text-sm font-bold tracking-tight">HFZinho</h3>
               </div>
             </div>
-            <button 
+            <button
               type="button"
               onClick={(e) => {
                 e.preventDefault()
@@ -114,8 +127,8 @@ export function AiChatWidget() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-primary-100 dark:scrollbar-thumb-dark-border bg-pastel-bg/30 dark:bg-dark-bg/30">
 
             {messages.map((msg) => (
-              <div 
-                key={msg.id} 
+              <div
+                key={msg.id}
                 className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.role !== 'user' && (
@@ -125,10 +138,10 @@ export function AiChatWidget() {
                     {msg.role === 'error' ? <AlertCircle size={12} /> : <Bot size={12} />}
                   </div>
                 )}
-                
+
                 <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed shadow-sm
-                  ${msg.role === 'user' 
-                    ? 'bg-primary-900 dark:bg-primary-800 text-white rounded-tr-sm' 
+                  ${msg.role === 'user'
+                    ? 'bg-primary-900 dark:bg-primary-800 text-white rounded-tr-sm'
                     : msg.role === 'error'
                       ? 'bg-white dark:bg-dark-panel border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 rounded-tl-sm'
                       : 'bg-white dark:bg-dark-panel border border-primary-100 dark:border-dark-border text-primary-900 dark:text-dark-text rounded-tl-sm'
@@ -139,7 +152,7 @@ export function AiChatWidget() {
                 </div>
               </div>
             ))}
-            
+
             {isGenerating && (
               <div className="flex gap-2 justify-start items-center text-primary-400">
                 <div className="w-6 h-6 rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center shrink-0">
@@ -159,6 +172,15 @@ export function AiChatWidget() {
           {/* Input Area */}
           <div className="p-3 bg-white dark:bg-dark-surface border-t border-primary-100 dark:border-dark-border">
             <div className="relative flex items-end gap-2 bg-pastel-panel/50 dark:bg-dark-panel/50 rounded-2xl p-1.5 border border-primary-100/50 dark:border-dark-border focus-within:border-primary-300 dark:focus-within:border-primary-700 focus-within:bg-white dark:focus-within:bg-dark-panel transition-all shadow-inner">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(true)}
+                title="Limpar conversa"
+                className="w-10 h-10 shrink-0 text-primary-300 hover:text-red-500 dark:text-dark-muted dark:hover:text-red-400 flex items-center justify-center transition-colors mb-0.5 ml-0.5 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl"
+              >
+                <Trash2 size={16} />
+              </button>
+
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -191,10 +213,37 @@ export function AiChatWidget() {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="w-16 h-16 bg-primary-900 hover:bg-primary-800 text-white rounded-[24px] shadow-[0_12px_30px_rgba(100,72,53,0.3)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 group relative overflow-hidden pointer-events-auto cursor-pointer"
+          className="group pointer-events-auto flex items-center gap-2.5 px-6 h-12
+            bg-primary-900 border border-primary-800/50
+            dark:bg-dark-panel dark:border-dark-border
+            rounded-full shadow-lg shadow-primary-900/20
+            hover:shadow-xl hover:shadow-primary-900/30
+            hover:-translate-y-0.5 transition-all duration-300
+            active:translate-y-0 active:scale-[0.98]
+            cursor-pointer relative overflow-hidden"
         >
-          <Sparkles size={26} className="relative z-10 drop-shadow-md group-hover:rotate-12 transition-transform duration-300" />
+          {/* Shimmer Effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-shimmer" />
+
+          <span className="text-sm font-bold text-white dark:text-primary-100 tracking-tight">
+            Crie com IA
+          </span>
+          <Sparkles
+            size={18}
+            className="text-primary-300 group-hover:rotate-12 transition-transform duration-300 group-hover:scale-110"
+          />
         </button>
+      )}
+
+      {showClearConfirm && (
+        <ConfirmModal
+          title="Limpar Chat"
+          message="Deseja limpar todo o histórico de mensagens com a IA?"
+          confirmLabel="Limpar"
+          isDestructive
+          onConfirm={handleClearChat}
+          onCancel={() => setShowClearConfirm(false)}
+        />
       )}
     </div>
   )
