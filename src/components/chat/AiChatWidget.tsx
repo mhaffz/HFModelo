@@ -12,27 +12,15 @@ import { useDiagramStore } from '../../store/useDiagramStore'
 import { generateDiagramFromPrompt } from '../../services/aiService'
 import { ConfirmModal } from '../modals/ConfirmModal'
 
-interface ChatMessage {
-  id: string
-  role: 'user' | 'assistant' | 'error'
-  content: string
-}
 
 export function AiChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: 'Olá, sou o HFZinho! Seu assistente de banco de dados. Como posso ajudar você a modelar hoje?',
-    },
-  ])
   const [input, setInput] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { aiConfig, setSchema, setError } = useDiagramStore()
+  const { aiConfig, setSchema, setError, chatMessages, setChatMessages } = useDiagramStore()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -40,7 +28,7 @@ export function AiChatWidget() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [chatMessages])
 
   const handleSend = async () => {
     if (!input.trim() || isGenerating) return
@@ -48,8 +36,8 @@ export function AiChatWidget() {
     const prompt = input.trim()
     setInput('')
 
-    setMessages((prev) => [
-      ...prev,
+    setChatMessages([
+      ...chatMessages,
       { id: Date.now().toString(), role: 'user', content: prompt }
     ])
 
@@ -60,20 +48,22 @@ export function AiChatWidget() {
       const schema = await generateDiagramFromPrompt(prompt, aiConfig)
       setSchema(schema)
 
-      setMessages((prev) => [
-        ...prev,
+      setChatMessages([
+        ...chatMessages,
+        { id: Date.now().toString(), role: 'user', content: prompt },
         {
-          id: Date.now().toString(),
+          id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: 'Diagrama gerado com sucesso! 🎉 Você pode visualizá-lo e editá-lo no canvas.'
         }
       ])
     } catch (e) {
       console.error('Erro ao gerar diagrama com IA:', e)
-      setMessages((prev) => [
-        ...prev,
+      setChatMessages([
+        ...chatMessages,
+        { id: Date.now().toString(), role: 'user', content: prompt },
         {
-          id: Date.now().toString(),
+          id: (Date.now() + 1).toString(),
           role: 'error',
           content: 'Ocorreu um erro ao gerar o diagrama. Verifique o console para mais detalhes.'
         }
@@ -84,7 +74,7 @@ export function AiChatWidget() {
   }
 
   const handleClearChat = () => {
-    setMessages([
+    setChatMessages([
       {
         id: '1',
         role: 'assistant',
@@ -126,7 +116,7 @@ export function AiChatWidget() {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-primary-100 dark:scrollbar-thumb-dark-border bg-pastel-bg/30 dark:bg-dark-bg/30">
 
-            {messages.map((msg) => (
+            {chatMessages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}

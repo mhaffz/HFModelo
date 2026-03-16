@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware'
 import { v4 as uuidv4 } from 'uuid'
 import { get, set as idbSet, del } from 'idb-keyval'
-import type { Table, Relationship, DiagramSchema, Attribute, AIConfig, Workspace } from '../types/diagram'
+import type { Table, Relationship, DiagramSchema, Attribute, AIConfig, Workspace, ChatMessage } from '../types/diagram'
 
 // ── IndexedDB Storage ────────────────────────────────────────────────────────
 const idbStorage: StateStorage = {
@@ -54,6 +54,7 @@ interface DiagramActions {
   setError: (msg: string | null) => void
   setAiSettingsOpen: (open: boolean) => void
   setTheme: (theme: 'light' | 'dark') => void
+  setChatMessages: (messages: ChatMessage[]) => void
 }
 
 interface DiagramState {
@@ -66,6 +67,7 @@ interface DiagramState {
   workspaces: Workspace[]
   isAiSettingsOpen: boolean
   theme: 'light' | 'dark'
+  chatMessages: ChatMessage[]
 }
 
 
@@ -81,7 +83,13 @@ const syncWorkspace = (state: Partial<DiagramState> & DiagramState): Partial<Dia
   if (!state.activeWorkspaceId || !state.workspaces) return state;
   const workspaces = state.workspaces.map(w =>
     w.id === state.activeWorkspaceId
-      ? { ...w, tables: state.tables, relationships: state.relationships, updatedAt: Date.now() }
+      ? { 
+          ...w, 
+          tables: state.tables, 
+          relationships: state.relationships, 
+          chatHistory: state.chatMessages,
+          updatedAt: Date.now() 
+        }
       : w
   );
   return { ...state, workspaces };
@@ -94,8 +102,8 @@ export const useDiagramStore = create<DiagramStore>()(
       const setWithSync = (fn: (state: DiagramStore) => Partial<DiagramStore>) => {
         set((state) => {
           const updates = fn(state);
-          // If tables or relationships are updated, sync them to the active workspace
-          if (updates.tables || updates.relationships) {
+          // If tables, relationships, or chat messages are updated, sync them to the active workspace
+          if (updates.tables || updates.relationships || updates.chatMessages) {
             return syncWorkspace({ ...state, ...updates } as any);
           }
           return updates;
@@ -113,6 +121,7 @@ export const useDiagramStore = create<DiagramStore>()(
         activeWorkspaceId: null,
         workspaces: [],
         theme: (typeof window !== 'undefined' && localStorage.getItem('hf-theme') as 'light' | 'dark') || 'light',
+        chatMessages: [],
 
         // ── Workspaces ────────────────────────────────────────────────────────────
         createWorkspace: (name: string) => {
@@ -122,6 +131,13 @@ export const useDiagramStore = create<DiagramStore>()(
             name,
             tables: [],
             relationships: [],
+            chatHistory: [
+              {
+                id: '1',
+                role: 'assistant',
+                content: 'Olá, sou o HFZinho! Seu assistente de banco de dados. Como posso ajudar você a modelar hoje?',
+              },
+            ],
             createdAt: Date.now(),
             updatedAt: Date.now(),
           };
@@ -130,6 +146,7 @@ export const useDiagramStore = create<DiagramStore>()(
             activeWorkspaceId: id,
             tables: [],
             relationships: [],
+            chatMessages: newWorkspace.chatHistory,
           }));
         },
 
@@ -140,6 +157,13 @@ export const useDiagramStore = create<DiagramStore>()(
               activeWorkspaceId: id,
               tables: workspace.tables,
               relationships: workspace.relationships,
+              chatMessages: workspace.chatHistory || [
+                {
+                  id: '1',
+                  role: 'assistant',
+                  content: 'Olá, sou o HFZinho! Seu assistente de banco de dados. Como posso ajudar você a modelar hoje?',
+                },
+              ],
               error: null,
             });
           }
@@ -165,6 +189,7 @@ export const useDiagramStore = create<DiagramStore>()(
                 activeWorkspaceId: nextWorkspace.id,
                 tables: nextWorkspace.tables,
                 relationships: nextWorkspace.relationships,
+                chatMessages: nextWorkspace.chatHistory || [],
               });
             } else {
               set({
@@ -172,6 +197,7 @@ export const useDiagramStore = create<DiagramStore>()(
                 activeWorkspaceId: null,
                 tables: [],
                 relationships: [],
+                chatMessages: [],
               });
             }
           } else {
@@ -350,6 +376,7 @@ export const useDiagramStore = create<DiagramStore>()(
             document.documentElement.classList.remove('dark')
           }
         },
+        setChatMessages: (messages) => setWithSync(() => ({ chatMessages: messages })),
       }
     },
     {
@@ -362,6 +389,7 @@ export const useDiagramStore = create<DiagramStore>()(
         workspaces: state.workspaces,
         aiConfig: state.aiConfig,
         theme: state.theme,
+        chatMessages: state.chatMessages,
       }),
       onRehydrateStorage: () => (state, error) => {
         if (!error && state && state.workspaces.length === 0) {

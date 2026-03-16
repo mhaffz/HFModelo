@@ -54,11 +54,18 @@ export interface DiagramSchema {
   relationships: Relationship[]
 }
 
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant' | 'error'
+  content: string
+}
+
 export interface Workspace {
   id: string
   name: string
   tables: Table[]
   relationships: Relationship[]
+  chatHistory: ChatMessage[]
   createdAt: number
   updatedAt: number
 }
