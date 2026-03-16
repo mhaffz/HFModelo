@@ -87,18 +87,23 @@ export function Sidebar() {
                     if (activeWorkspaceId !== ws.id) switchWorkspace(ws.id)
                   }}
                 >
-                  <div className="flex-1 min-w-0 pr-2">
-                    <input
-                      type="text"
-                      value={ws.name}
-                      onChange={(e) => renameWorkspace(ws.id, e.target.value)}
-                      className={`w-full bg-transparent text-sm font-medium focus:outline-none focus:text-primary-600 dark:focus:text-primary-400 ${
-                        activeWorkspaceId === ws.id
-                          ? 'text-primary-900 dark:text-dark-text'
-                          : 'text-pastel-text dark:text-dark-muted'
-                      }`}
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                  <div className="pr-2">
+                    <div className="inline-grid grid-cols-1 grid-rows-1 items-center">
+                      <span className="invisible whitespace-pre text-sm font-medium row-start-1 col-start-1 pointer-events-none px-0.5 translate-y-[-1px]">
+                        {ws.name || ' '}
+                      </span>
+                      <input
+                        type="text"
+                        value={ws.name}
+                        onChange={(e) => renameWorkspace(ws.id, e.target.value)}
+                        className={`row-start-1 col-start-1 w-full min-w-0 bg-transparent text-sm font-medium focus:outline-none focus:text-primary-600 dark:focus:text-primary-400 outline-none px-0.5 ${
+                          activeWorkspaceId === ws.id
+                            ? 'text-primary-900 dark:text-dark-text'
+                            : 'text-pastel-text dark:text-dark-muted'
+                        }`}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
                     <div className="text-[9px] text-pastel-muted dark:text-dark-muted/50 mt-0.5">
                       {ws.tables.length} tabelas
                     </div>

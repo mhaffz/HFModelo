@@ -63,7 +63,7 @@ export function DiagramCanvas() {
     useDiagramStore()
 
   const [editingTableId, setEditingTableId] = useState<string | null>(null)
-  
+
   // Modals state
   const [showRelDeleteConfirm, setShowRelDeleteConfirm] = useState<string | null>(null)
   const [showRelNamePrompt, setShowRelNamePrompt] = useState<Relationship | null>(null)
@@ -254,7 +254,7 @@ export function DiagramCanvas() {
           </div>
           <h2 className="text-primary-900 dark:text-dark-text text-2xl font-black tracking-tight mb-2">Workspace Pronto</h2>
           <p className="text-primary-600/60 dark:text-dark-muted text-sm max-w-[280px] font-bold uppercase tracking-widest leading-loose">
-            Descreva seu modelo na lateral para começar a mágica da IA.
+            Comece adicionando uma tabela ou descreva seu modelo na lateral para a IA.
           </p>
 
         </div>
@@ -307,9 +307,9 @@ export function DiagramCanvas() {
           onConfirm={(val) => {
             const [s, t] = val.split('-')
             if (s && t) {
-              updateRelationship(showRelCardPrompt.id, { 
-                sourceCardinality: s.trim(), 
-                targetCardinality: t.trim() 
+              updateRelationship(showRelCardPrompt.id, {
+                sourceCardinality: s.trim(),
+                targetCardinality: t.trim()
               })
             }
             setShowRelCardPrompt(null)
