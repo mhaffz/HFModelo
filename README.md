@@ -17,7 +17,7 @@
 
 <br/>
 
-![HFModelo Banner](https://raw.githubusercontent.com/mhaffz/HFModelo/master/src/public/banner.svg)
+![HFModelo Banner](https://raw.githubusercontent.com/mhaffz/HFModelo/refs/heads/master/src/public/banner.svg?token=GHSAT0AAAAAADV76ROVAPAPAEGEZT5ITPOE2NXNV5Q)
 
 </div>
 
