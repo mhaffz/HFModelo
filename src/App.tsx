@@ -1,14 +1,26 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { ReactFlowProvider } from 'reactflow'
 
 import { Sidebar } from './components/sidebar/Sidebar'
 import { DiagramCanvas } from './components/canvas/DiagramCanvas'
 import { Navbar } from './components/navbar/Navbar'
 import { AiSettingsModal } from './components/modals/AiSettingsModal'
+import { ResponsiveBlocker } from './components/ResponsiveBlocker'
 import { useDiagramStore } from './store/useDiagramStore'
 
 export default function App() {
   const { isAiSettingsOpen, setAiSettingsOpen, theme } = useDiagramStore()
+  const [isTooSmall, setIsTooSmall] = useState(false)
+
+  useEffect(() => {
+    const checkSize = () => {
+      setIsTooSmall(window.innerWidth < 1024)
+    }
+
+    checkSize()
+    window.addEventListener('resize', checkSize)
+    return () => window.removeEventListener('resize', checkSize)
+  }, [])
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -19,10 +31,13 @@ export default function App() {
   }, [theme])
 
 
+  if (isTooSmall) {
+    return <ResponsiveBlocker />
+  }
+
   return (
     <ReactFlowProvider>
       <div className="flex flex-col h-screen w-screen overflow-hidden bg-pastel-bg dark:bg-dark-bg text-pastel-text dark:text-dark-text font-sans selection:bg-primary-200 selection:text-primary-900 transition-colors duration-300">
-
         <Navbar />
         <div className="flex flex-1 relative overflow-hidden">
           <Sidebar />
@@ -34,7 +49,6 @@ export default function App() {
         {/* Global Modals */}
         {isAiSettingsOpen && <AiSettingsModal onClose={() => setAiSettingsOpen(false)} />}
       </div>
-
     </ReactFlowProvider>
   )
 }
