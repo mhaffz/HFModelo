@@ -55,6 +55,9 @@ interface DiagramActions {
   setAiSettingsOpen: (open: boolean) => void
   setTheme: (theme: 'light' | 'dark') => void
   setChatMessages: (messages: ChatMessage[]) => void
+  setDiagramType: (type: 'hfmodelo' | 'conceptual' | 'logical') => void
+  setConceptualDiagram: (nodes: any[], edges: any[]) => void
+  updateConceptualNodePosition: (id: string, position: { x: number; y: number }) => void
 }
 
 interface DiagramState {
@@ -68,6 +71,9 @@ interface DiagramState {
   isAiSettingsOpen: boolean
   theme: 'light' | 'dark'
   chatMessages: ChatMessage[]
+  diagramType: 'hfmodelo' | 'conceptual' | 'logical'
+  conceptualNodes: any[]
+  conceptualEdges: any[]
 }
 
 
@@ -103,7 +109,7 @@ export const useDiagramStore = create<DiagramStore>()(
         set((state) => {
           const updates = fn(state);
           // If tables, relationships, or chat messages are updated, sync them to the active workspace
-          if (updates.tables || updates.relationships || updates.chatMessages) {
+          if (updates.tables || updates.relationships || updates.chatMessages || updates.conceptualNodes || updates.conceptualEdges) {
             return syncWorkspace({ ...state, ...updates } as any);
           }
           return updates;
@@ -122,6 +128,9 @@ export const useDiagramStore = create<DiagramStore>()(
         workspaces: [],
         theme: (typeof window !== 'undefined' && localStorage.getItem('hf-theme') as 'light' | 'dark') || 'light',
         chatMessages: [],
+        diagramType: 'hfmodelo',
+        conceptualNodes: [],
+        conceptualEdges: [],
 
         // ── Workspaces ────────────────────────────────────────────────────────────
         createWorkspace: (name: string) => {
@@ -377,6 +386,17 @@ export const useDiagramStore = create<DiagramStore>()(
           }
         },
         setChatMessages: (messages) => setWithSync(() => ({ chatMessages: messages })),
+        setDiagramType: (type) => set({ diagramType: type }),
+
+        setConceptualDiagram: (nodes, edges) =>
+          set({ conceptualNodes: nodes, conceptualEdges: edges }),
+
+        updateConceptualNodePosition: (id, position) =>
+          set((s) => ({
+            conceptualNodes: s.conceptualNodes.map((n) =>
+              n.id === id ? { ...n, position } : n
+            ),
+          })),
       }
     },
     {
@@ -390,6 +410,9 @@ export const useDiagramStore = create<DiagramStore>()(
         aiConfig: state.aiConfig,
         theme: state.theme,
         chatMessages: state.chatMessages,
+        diagramType: state.diagramType,
+        conceptualNodes: state.conceptualNodes,
+        conceptualEdges: state.conceptualEdges,
       }),
       onRehydrateStorage: () => (state, error) => {
         if (!error && state && state.workspaces.length === 0) {
